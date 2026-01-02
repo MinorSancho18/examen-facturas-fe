@@ -1,0 +1,265 @@
+@model FacturaDto
+@{
+    ViewData["Title"] = "Detalle de Factura";
+    var esBorrador = Model.IdEstadoFactura == 1; // Asumiendo que 1 = Borrador
+    var esEmitida = Model.IdEstadoFactura == 2; // Asumiendo que 2 = Emitida
+    var esAnulada = Model.IdEstadoFactura == 3; // Asumiendo que 3 = Anulada
+    var estadoBadge = esBorrador ? "secondary" : (esEmitida ? "success" : "danger");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Detalle de Factura #@Model.NumeroFactura</h1>
+    <a asp-controller="Facturas" asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Información de la Factura</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">ID:</dt>
+                    <dd class="col-sm-9">@Model.IdFactura</dd>
+                    
+                    <dt class="col-sm-3">Número:</dt>
+                    <dd class="col-sm-9">@Model.NumeroFactura</dd>
+                    
+                    <dt class="col-sm-3">Cliente:</dt>
+                    <dd class="col-sm-9">@Model.NombreCliente</dd>
+                    
+                    <dt class="col-sm-3">Fecha:</dt>
+                    <dd class="col-sm-9">@Model.FechaEmision.ToString("dd/MM/yyyy")</dd>
+                    
+                    <dt class="col-sm-3">Estado:</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-@estadoBadge">@Model.NombreEstado</span>
+                    </dd>
+                    
+                    @if (!string.IsNullOrEmpty(Model.MotivoAnulacion))
+                    {
+                        <dt class="col-sm-3">Motivo Anulación:</dt>
+                        <dd class="col-sm-9">@Model.MotivoAnulacion</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Líneas de Factura</h5>
+                @if (esBorrador)
+                {
+                    <button type="button" class="btn btn-sm btn-primary" id="btnAgregarLinea">
+                        <i class="bi bi-plus"></i> Agregar Línea
+                    </button>
+                }
+            </div>
+            <div class="card-body">
+                <table class="table table-striped" id="tablaLineas">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unit.</th>
+                            <th>Impuesto</th>
+                            <th>Subtotal</th>
+                            @if (esBorrador)
+                            {
+                                <th>Acciones</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Lineas != null && Model.Lineas.Any())
+                        {
+                            @foreach (var linea in Model.Lineas)
+                            {
+                                <tr>
+                                    <td>@linea.NombreProducto</td>
+                                    <td>@linea.Cantidad</td>
+                                    <td>$@linea.PrecioUnitario.ToString("N2")</td>
+                                    <td>@linea.Impuesto.ToString("N2")%</td>
+                                    <td>$@linea.Subtotal.ToString("N2")</td>
+                                    @if (esBorrador)
+                                    {
+                                        <td>
+                                            <button class="btn btn-sm btn-warning btnEditarLinea" data-id="@linea.IdLinea" data-cantidad="@linea.Cantidad">
+                                                Editar
+                                            </button>
+                                            <button class="btn btn-sm btn-danger btnEliminarLinea" data-id="@linea.IdLinea">
+                                                Eliminar
+                                            </button>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="@(esBorrador ? "6" : "5")" class="text-center">No hay líneas agregadas</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Total</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="text-end">$@Model.Total.ToString("N2")</h2>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5>Acciones</h5>
+            </div>
+            <div class="card-body d-grid gap-2">
+                @if (esBorrador)
+                {
+                    <button type="button" class="btn btn-success" id="btnEmitir">
+                        <i class="bi bi-check-circle"></i> Emitir Factura
+                    </button>
+                    <button type="button" class="btn btn-warning" id="btnEditarFactura">
+                        <i class="bi bi-pencil"></i> Editar Factura
+                    </button>
+                }
+                @if (esBorrador || esEmitida)
+                {
+                    <button type="button" class="btn btn-danger" id="btnAnular">
+                        <i class="bi bi-x-circle"></i> Anular Factura
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Línea -->
+<div class="modal fade" id="modalAgregarLinea" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Línea</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarLinea">
+                    <div class="mb-3">
+                        <label for="lineaProducto" class="form-label">Producto</label>
+                        <select class="form-select" id="lineaProducto" required>
+                            <option value="">Seleccione un producto...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lineaCantidad" class="form-label">Cantidad</label>
+                        <input type="number" class="form-control" id="lineaCantidad" min="1" value="1" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarLinea">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Línea -->
+<div class="modal fade" id="modalEditarLinea" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Línea</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarLinea">
+                    <input type="hidden" id="editarLineaId" />
+                    <div class="mb-3">
+                        <label for="editarLineaCantidad" class="form-label">Cantidad</label>
+                        <input type="number" class="form-control" id="editarLineaCantidad" min="1" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnActualizarLinea">Actualizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Factura -->
+<div class="modal fade" id="modalEditarFactura" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Factura</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarFactura">
+                    <div class="mb-3">
+                        <label for="editarFacturaCliente" class="form-label">Cliente</label>
+                        <select class="form-select" id="editarFacturaCliente" required>
+                            <option value="">Seleccione un cliente...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editarFacturaNumero" class="form-label">Número de Factura</label>
+                        <input type="text" class="form-control" id="editarFacturaNumero" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarEdicionFactura">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Anular -->
+<div class="modal fade" id="modalAnularFactura" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Anular Factura</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAnular">
+                    <div class="mb-3">
+                        <label for="motivoAnulacion" class="form-label">Motivo de Anulación</label>
+                        <textarea class="form-control" id="motivoAnulacion" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAnular">Anular</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const facturaId = @Model.IdFactura;
+        const idCliente = @Model.IdCliente;
+        const numeroFactura = '@Model.NumeroFactura';
+        const esBorrador = @esBorrador.ToString().ToLower();
+    </script>
+    <script src="~/js/facturasDetalle.js"></script>
+}

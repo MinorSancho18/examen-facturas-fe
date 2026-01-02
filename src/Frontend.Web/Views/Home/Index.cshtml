@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Sistema de Facturación</h1>
+    <p class="lead">Bienvenido al sistema de gestión de facturas</p>
+    
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people"></i> Clientes
+                    </h5>
+                    <p class="card-text">Gestione los clientes del sistema</p>
+                    <a asp-controller="Clientes" asp-action="Index" class="btn btn-primary">Ir a Clientes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-box"></i> Productos
+                    </h5>
+                    <p class="card-text">Administre productos y servicios</p>
+                    <a asp-controller="Productos" asp-action="Index" class="btn btn-primary">Ir a Productos</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-receipt"></i> Facturas
+                    </h5>
+                    <p class="card-text">Cree y gestione facturas</p>
+                    <a asp-controller="Facturas" asp-action="Index" class="btn btn-primary">Ir a Facturas</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

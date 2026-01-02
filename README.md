@@ -14,25 +14,41 @@ Frontend MVC .NET 8 con Clean Architecture para consumir API de facturación.
    cd examen-facturas-fe
    ```
 
-2. Configurar URL del API en `src/Frontend.Web/appsettings.json`:
+2. Descargar las librerías JavaScript requeridas:
+   
+   **Opción A - Usando el script (recomendado):**
+   ```bash
+   ./download-libs.sh
+   ```
+   
+   **Opción B - Manualmente:**
+   - Descargar jQuery 3.7.1 de https://code.jquery.com/jquery-3.7.1.min.js
+   - Descargar Bootstrap 5.3.3 de https://getbootstrap.com/
+   - Descargar DataTables 2.0 de https://datatables.net/
+   - Descargar SweetAlert2 de https://sweetalert2.github.io/
+   - Descargar jQuery Validation de https://jqueryvalidation.org/
+   
+   Colocar todos los archivos en sus respectivos directorios dentro de `src/Frontend.Web/wwwroot/lib/`
+
+3. Configurar URL del API en `src/Frontend.Web/appsettings.json`:
    ```json
    "ApiSettings": {
      "BaseUrl": "https://localhost:7001"
    }
    ```
 
-3. Restaurar paquetes:
+4. Restaurar paquetes:
    ```bash
    dotnet restore
    ```
 
-4. Ejecutar proyecto:
+5. Ejecutar proyecto:
    ```bash
    cd src/Frontend.Web
    dotnet run
    ```
 
-5. Abrir navegador en `https://localhost:5001`
+6. Abrir navegador en `https://localhost:5001`
 
 ## Estructura del Proyecto
 
